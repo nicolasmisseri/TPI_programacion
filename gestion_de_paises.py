@@ -1,29 +1,27 @@
-# Se importa el módulo csv, os y unicodedata
+# Se importan los módulos csv y os
 import csv
 import os
-import unicodedata
 
 # Definición de constante para referirse al archivo csv sin repetir el str
-
 ARCHIVO_CSV = "paises.csv"
 
 # DEFINICIÓN DE FUNCIONES
 
 # Lectura del archivo CSV
 def cargar_paises():
-
+    """Lee el archivo CSV y retorna una lista de diccionarios con los países"""
     paises = []
 
     if not os.path.exists(ARCHIVO_CSV):
         print(f"Error: No se encontró el archivo '{ARCHIVO_CSV}'.")
         return paises
-    
+
     try:
         with open(ARCHIVO_CSV, newline="", encoding="utf-8") as archivo:
             lector = csv.DictReader(archivo)
 
             for fila in lector:
-                
+
                 if not fila.get("nombre") or not fila.get("poblacion") \
                 or not fila.get("superficie") or not fila.get("continente"):
                     print(f"Advertencia: fila incompleta ignorada: {fila}")
@@ -59,51 +57,88 @@ def guardar_paises(paises):
         print(f"Error al guardar el archivo: {e}")
 
 # FUNCIÓN DE NORMALIZACIÓN
-
+# Convierte un texto a minúsculas para comparar sin importar mayúsculas
+# No elimina acentos, pero es suficiente para las comparaciones del sistema
 def normalizar_texto(texto):
-    """Normaliza texto removiendo acentos y convirtiendo a minúscula"""
-    texto_sin_acentos = ''.join(
-        c for c in unicodedata.normalize('NFD', texto)
-        if unicodedata.category(c) != 'Mn'
-    )
-    return texto_sin_acentos.lower()
+    """Convierte el texto a minúsculas para comparaciones insensibles a mayúsculas"""
+    return texto.lower().strip()
 
 def limpiar_numero(numero_texto):
-    """Limpia y convierte números removiendo puntos y comas"""
-    # Remover espacios en blanco
+    """Limpia y convierte números removiendo puntos y comas (separadores de miles)"""
     numero_texto = numero_texto.strip()
-    # Remover puntos y comas (separadores de miles)
     numero_texto = numero_texto.replace(".", "").replace(",", "")
     return int(numero_texto)
 
 # FUNCIONES DE FILTRADO
 
 def filtrar_por_continente(paises, continente):
-    """Filtra países por continente (insensible a mayúsculas, minúsculas y acentos)"""
+    """Filtra países por continente (insensible a mayúsculas)"""
     continente_normalizado = normalizar_texto(continente)
-    return [p for p in paises if normalizar_texto(p["continente"]) == continente_normalizado]
+    resultado = []
+    for p in paises:
+        if normalizar_texto(p["continente"]) == continente_normalizado:
+            resultado.append(p)
+    return resultado
 
 def filtrar_por_poblacion(paises, poblacion_min, poblacion_max):
     """Filtra países por rango de población"""
-    return [p for p in paises if poblacion_min <= p["poblacion"] <= poblacion_max]
+    resultado = []
+    for p in paises:
+        if poblacion_min <= p["poblacion"] <= poblacion_max:
+            resultado.append(p)
+    return resultado
 
 def filtrar_por_superficie(paises, superficie_min, superficie_max):
     """Filtra países por rango de superficie"""
-    return [p for p in paises if superficie_min <= p["superficie"] <= superficie_max]
+    resultado = []
+    for p in paises:
+        if superficie_min <= p["superficie"] <= superficie_max:
+            resultado.append(p)
+    return resultado
 
 # FUNCIONES DE ORDENAMIENTO
 
 def ordenar_por_nombre(paises, descendente=False):
-    """Ordena países por nombre"""
-    return sorted(paises, key=lambda p: p["nombre"], reverse=descendente)
+    """Ordena países por nombre usando bubble sort"""
+    lista = paises[:]  # copia para no modificar la original
+    n = len(lista)
+    for i in range(n - 1):
+        for j in range(n - 1 - i):
+            if not descendente:
+                condicion = lista[j]["nombre"].lower() > lista[j + 1]["nombre"].lower()
+            else:
+                condicion = lista[j]["nombre"].lower() < lista[j + 1]["nombre"].lower()
+            if condicion:
+                lista[j], lista[j + 1] = lista[j + 1], lista[j]
+    return lista
 
 def ordenar_por_poblacion(paises, descendente=False):
-    """Ordena países por población"""
-    return sorted(paises, key=lambda p: p["poblacion"], reverse=descendente)
+    """Ordena países por población usando bubble sort"""
+    lista = paises[:]
+    n = len(lista)
+    for i in range(n - 1):
+        for j in range(n - 1 - i):
+            if not descendente:
+                condicion = lista[j]["poblacion"] > lista[j + 1]["poblacion"]
+            else:
+                condicion = lista[j]["poblacion"] < lista[j + 1]["poblacion"]
+            if condicion:
+                lista[j], lista[j + 1] = lista[j + 1], lista[j]
+    return lista
 
 def ordenar_por_superficie(paises, descendente=False):
-    """Ordena países por superficie"""
-    return sorted(paises, key=lambda p: p["superficie"], reverse=descendente)
+    """Ordena países por superficie usando bubble sort"""
+    lista = paises[:]
+    n = len(lista)
+    for i in range(n - 1):
+        for j in range(n - 1 - i):
+            if not descendente:
+                condicion = lista[j]["superficie"] > lista[j + 1]["superficie"]
+            else:
+                condicion = lista[j]["superficie"] < lista[j + 1]["superficie"]
+            if condicion:
+                lista[j], lista[j + 1] = lista[j + 1], lista[j]
+    return lista
 
 # FUNCIONES DE ESTADÍSTICAS
 
@@ -112,16 +147,24 @@ def obtener_estadisticas(paises):
     if not paises:
         print("No hay países para mostrar estadísticas.")
         return
-    
-    poblaciones = [p["poblacion"] for p in paises]
-    superficies = [p["superficie"] for p in paises]
-    
-    pais_mayor_poblacion = max(paises, key=lambda p: p["poblacion"])
-    pais_menor_poblacion = min(paises, key=lambda p: p["poblacion"])
-    
-    promedio_poblacion = sum(poblaciones) / len(poblaciones)
-    promedio_superficie = sum(superficies) / len(superficies)
-    
+
+    # Calcular mayor y menor población recorriendo la lista
+    pais_mayor_poblacion = paises[0]
+    pais_menor_poblacion = paises[0]
+    suma_poblacion = 0
+    suma_superficie = 0
+
+    for p in paises:
+        suma_poblacion += p["poblacion"]
+        suma_superficie += p["superficie"]
+        if p["poblacion"] > pais_mayor_poblacion["poblacion"]:
+            pais_mayor_poblacion = p
+        if p["poblacion"] < pais_menor_poblacion["poblacion"]:
+            pais_menor_poblacion = p
+
+    promedio_poblacion = suma_poblacion / len(paises)
+    promedio_superficie = suma_superficie / len(paises)
+
     print("\n----- ESTADÍSTICAS GENERALES -----")
     print(f"País con mayor población: {pais_mayor_poblacion['nombre']} ({pais_mayor_poblacion['poblacion']:,})")
     print(f"País con menor población: {pais_menor_poblacion['nombre']} ({pais_menor_poblacion['poblacion']:,})")
@@ -133,14 +176,17 @@ def contar_paises_por_continente(paises):
     if not paises:
         print("No hay países para contar.")
         return
-    
+
     continentes = {}
     for p in paises:
         continente = p["continente"]
-        continentes[continente] = continentes.get(continente, 0) + 1
-    
+        if continente in continentes:
+            continentes[continente] += 1
+        else:
+            continentes[continente] = 1
+
     print("\n----- PAÍSES POR CONTINENTE -----")
-    for continente in sorted(continentes.keys()):
+    for continente in continentes:
         print(f"{continente}: {continentes[continente]} país/es")
 
 def mostrar_paises(paises):
@@ -148,13 +194,13 @@ def mostrar_paises(paises):
     if not paises:
         print("No hay países para mostrar.")
         return
-    
+
     print(f"\n{'Nombre':<25} {'Población':>15} {'Superficie':>15} {'Continente':<20}")
     print("-" * 75)
     for p in paises:
         print(f"{p['nombre']:<25} {p['poblacion']:>15,} {p['superficie']:>15,} {p['continente']:<20}")
 
-# ── NUEVAS FUNCIONALIDADES ──────────────────────────────────────────────────
+# NUEVAS FUNCIONALIDADES
 
 # 1. AGREGAR UN PAÍS
 def agregar_pais(paises):
@@ -165,13 +211,20 @@ def agregar_pais(paises):
     # Nombre: no puede estar vacío ni repetido
     while True:
         nombre = input("Nombre del país: ").strip()
-        if not nombre:
+        if nombre == "":
             print("Error: el nombre no puede estar vacío.")
             continue
+
         # Verificar que no exista ya un país con ese nombre
-        if any(normalizar_texto(p["nombre"]) == normalizar_texto(nombre) for p in paises):
+        encontrado = False
+        for p in paises:
+            if normalizar_texto(p["nombre"]) == normalizar_texto(nombre):
+                encontrado = True
+                break
+        if encontrado:
             print(f"Error: ya existe un país con el nombre '{nombre}'.")
             continue
+
         break
 
     # Población: número entero positivo
@@ -199,7 +252,7 @@ def agregar_pais(paises):
     # Continente: no puede estar vacío
     while True:
         continente = input("Continente: ").strip()
-        if not continente:
+        if continente == "":
             print("Error: el continente no puede estar vacío.")
             continue
         break
@@ -218,23 +271,23 @@ def agregar_pais(paises):
 
 # 2. ACTUALIZAR DATOS DE UN PAÍS
 def actualizar_pais(paises):
-    """Busca un país por nombre exacto y permite actualizar
+    """Busca un país por nombre y permite actualizar
     su población y/o superficie. Guarda los cambios en el CSV."""
     print("\n----- ACTUALIZAR PAÍS -----")
 
-    nombre_busqueda = input("Ingrese el nombre exacto del país a actualizar: ").strip()
-    if not nombre_busqueda:
+    nombre_busqueda = input("Ingrese el nombre del país a actualizar: ").strip()
+    if nombre_busqueda == "":
         print("Error: debe ingresar un nombre.")
         return
 
     # Buscar el país en la lista
-    indice = None
-    for i, p in enumerate(paises):
-        if normalizar_texto(p["nombre"]) == normalizar_texto(nombre_busqueda):
+    indice = -1
+    for i in range(len(paises)):
+        if normalizar_texto(paises[i]["nombre"]) == normalizar_texto(nombre_busqueda):
             indice = i
             break
 
-    if indice is None:
+    if indice == -1:
         print(f"No se encontró ningún país con el nombre '{nombre_busqueda}'.")
         return
 
@@ -278,16 +331,19 @@ def actualizar_pais(paises):
 # 3. BUSCAR PAÍS POR NOMBRE
 def buscar_por_nombre(paises):
     """Busca países cuyo nombre contenga el texto ingresado
-    (coincidencia parcial, insensible a mayúsculas y acentos)."""
+    (coincidencia parcial, insensible a mayúsculas)."""
     print("\n----- BUSCAR PAÍS POR NOMBRE -----")
 
     termino = input("Ingrese el nombre (o parte del nombre) a buscar: ").strip()
-    if not termino:
+    if termino == "":
         print("Error: debe ingresar un término de búsqueda.")
         return
 
     termino_normalizado = normalizar_texto(termino)
-    resultados = [p for p in paises if termino_normalizado in normalizar_texto(p["nombre"])]
+    resultados = []
+    for p in paises:
+        if termino_normalizado in normalizar_texto(p["nombre"]):
+            resultados.append(p)
 
     if not resultados:
         print(f"No se encontraron países con '{termino}' en el nombre.")
@@ -302,27 +358,26 @@ def eliminar_pais(paises):
     después de solicitar confirmación."""
     print("\n----- ELIMINAR PAÍS -----")
 
-    nombre_busqueda = input("Ingrese el nombre exacto del país a eliminar: ").strip()
-    if not nombre_busqueda:
+    nombre_busqueda = input("Ingrese el nombre del país a eliminar: ").strip()
+    if nombre_busqueda == "":
         print("Error: debe ingresar un nombre.")
         return
 
     # Buscar el país en la lista
-    indice = None
-    for i, p in enumerate(paises):
-        if normalizar_texto(p["nombre"]) == normalizar_texto(nombre_busqueda):
+    indice = -1
+    for i in range(len(paises)):
+        if normalizar_texto(paises[i]["nombre"]) == normalizar_texto(nombre_busqueda):
             indice = i
             break
 
-    if indice is None:
+    if indice == -1:
         print(f"No se encontró ningún país con el nombre '{nombre_busqueda}'.")
         return
 
     pais = paises[indice]
     print(f"\nPaís a eliminar: {pais['nombre']} | Población: {pais['poblacion']:,} | Superficie: {pais['superficie']:,} km²")
-    
-    # Confirmar eliminación
-    confirmacion = input("¿Está seguro de que desea eliminar este país? (s/n): ").lower()
+
+    confirmacion = input("¿Está seguro de que desea eliminar este país? (s/n): ").strip().lower()
     if confirmacion != "s":
         print("Eliminación cancelada.")
         return
@@ -332,7 +387,6 @@ def eliminar_pais(paises):
     guardar_paises(paises)
     print(f"País '{nombre_eliminado}' eliminado correctamente.")
 
-# ───────────────────────────────────────────────────────────────────────────
 
 # Main con menú de opciones
 def main():
@@ -361,15 +415,15 @@ def main():
         if opcion == "0":
             print("¡Hasta luego!")
             break
-        
+
         elif opcion == "1":
             mostrar_paises(paises)
-        
+
         elif opcion == "2":
             continente = input("Ingrese el continente: ").strip()
             resultado = filtrar_por_continente(paises, continente)
             mostrar_paises(resultado)
-        
+
         elif opcion == "3":
             try:
                 pop_min = limpiar_numero(input("Ingrese población mínima: "))
@@ -378,7 +432,7 @@ def main():
                 mostrar_paises(resultado)
             except ValueError:
                 print("Error: Ingrese números válidos.")
-        
+
         elif opcion == "4":
             try:
                 sup_min = limpiar_numero(input("Ingrese superficie mínima (km²): "))
@@ -387,25 +441,25 @@ def main():
                 mostrar_paises(resultado)
             except ValueError:
                 print("Error: Ingrese números válidos.")
-        
+
         elif opcion == "5":
-            descendente = input("¿Orden descendente? (s/n): ").lower() == "s"
+            descendente = input("¿Orden descendente? (s/n): ").strip().lower() == "s"
             resultado = ordenar_por_nombre(paises, descendente)
             mostrar_paises(resultado)
-        
+
         elif opcion == "6":
-            descendente = input("¿Orden descendente? (s/n): ").lower() == "s"
+            descendente = input("¿Orden descendente? (s/n): ").strip().lower() == "s"
             resultado = ordenar_por_poblacion(paises, descendente)
             mostrar_paises(resultado)
-        
+
         elif opcion == "7":
-            descendente = input("¿Orden descendente? (s/n): ").lower() == "s"
+            descendente = input("¿Orden descendente? (s/n): ").strip().lower() == "s"
             resultado = ordenar_por_superficie(paises, descendente)
             mostrar_paises(resultado)
-        
+
         elif opcion == "8":
             obtener_estadisticas(paises)
-        
+
         elif opcion == "9":
             contar_paises_por_continente(paises)
 
@@ -420,7 +474,7 @@ def main():
 
         elif opcion == "13":
             eliminar_pais(paises)
-        
+
         else:
             print("Opción no válida. Intente de nuevo.")
 
