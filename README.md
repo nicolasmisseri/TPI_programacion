@@ -161,5 +161,5 @@ Promedio de superficie: 3,007,791 km²
 ## 🔗 Enlaces
 
 - 📁 Repositorio: [https://github.com/nicolasmisseri/TPI_programacion](#)
-- 🎥 Video demostración: [[Ver Video](https://drive.google.com/file/d/1cPKmf1jJZrA5rpEl8F0_VurNqiZWerNs/view)](#)
-- 📄 Documentación PDF: [[Ver documento](https://drive.google.com/drive/u/0/folders/1KaFRDmzHO_zpcie8bfiJn6BjIi8Eqexg)](#)
+- 🎥 Video demostración: [[Ver Video](https://drive.google.com/file/d/1cPKmf1jJZrA5rpEl8F0_VurNqiZWerNs/view)]
+- 📄 Documentación PDF: [[Ver documento]([https://drive.google.com/drive/u/0/folders/1KaFRDmzHO_zpcie8bfiJn6BjIi8Eqexg](https://drive.google.com/file/d/1NTIc3Oubpzm6VIJzzXbuSzhHPZ9SbjCq/view?usp=sharing))]
