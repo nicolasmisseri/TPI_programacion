@@ -94,3 +94,9 @@ Al iniciar, la aplicación muestra un menú numerado. Cada opción pide los dato
 
 - Camila Tosti
 - Nicolas Misseri
+
+## Marco teórico
+
+Podés ver el documento del marco teórico del proyecto en el siguiente enlace:
+
+- [Marco teórico del proyecto](https://drive.google.com/file/d/1NTIc3Oubpzm6VIJzzXbuSzhHPZ9SbjCq/view)
